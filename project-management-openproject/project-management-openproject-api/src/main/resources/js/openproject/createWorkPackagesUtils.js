@@ -17,6 +17,9 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+// Init global event bus.
+window.openProjectEvents = window.openProjectEvents || new EventTarget();
+
 define("openproject.createworkpackage.utils", {
   prefix: "openproject.createworkpackage.utils.",
   keys: [
@@ -56,7 +59,7 @@ define('create-work-package-utils', ['jquery', 'xwiki-l10n!openproject.createwor
 	        text: option.name,
 	        selected:
 	          hasDefault &&
-	          fieldData.defaultValue.self.location === value
+	          fieldData.defaultValue === value
 	      })
 	    );
 	  });
@@ -67,6 +70,12 @@ define('create-work-package-utils', ['jquery', 'xwiki-l10n!openproject.createwor
 	}
 
 	let createInput = function createInput(id, name, fieldClass, fieldData) {
+	  // Only build an input for actual field definitions. Response metadata (e.g. validationMessage,
+	  // which is a plain string) has no "type" and must not be rendered as an input.
+	  if (!fieldData || !fieldData.type) {
+	    return null;
+	  }
+
 	  let field;
 
 	  switch (fieldData.type) {
@@ -78,6 +87,26 @@ define('create-work-package-utils', ['jquery', 'xwiki-l10n!openproject.createwor
 	        required: fieldData.required,
 	      });
 	      populateSelect(field, fieldData);
+	      break;
+
+	    case "selectize":
+	      // Endpoint-backed field: render a plain select now and turn it into a selectize autocomplete later,
+	      // once it is in the DOM, via initDynamicSelectizeFields. The data-* attributes carry everything that
+	      // initialization needs.
+	      field = $("<select>", {
+	        id: id,
+	        name: name,
+	        class: fieldClass,
+	        required: fieldData.required,
+	      });
+	      field.attr("data-op-selectize", "true");
+	      field.attr("data-endpoint", fieldData.endpoint || "");
+	      if (fieldData.defaultValue) {
+	        field.attr("data-preselect-value", fieldData.defaultValue);
+	        if (fieldData.defaultLabel) {
+	          field.attr("data-preselect-label", fieldData.defaultLabel);
+	        }
+	      }
 	      break;
 
 	    case "date":
@@ -101,7 +130,7 @@ define('create-work-package-utils', ['jquery', 'xwiki-l10n!openproject.createwor
 	        class: fieldClass,
 	        required: fieldData.required,
 	        placeholder: l10n.get("inputPlaceholder", fieldData.label),
-	        value: fieldData.defaultValue?.id || ""
+	        value: fieldData.defaultValue || ""
 	      });
 	      break;
 	  }
@@ -154,59 +183,187 @@ define('create-work-package-utils', ['jquery', 'xwiki-l10n!openproject.createwor
 	  return payload;
 	}
 
-	let loadProjects = async function loadProjects(connectionSelectId, projectSelectId, projectContainerId,
-	incorrectTokenId) {
+	let initProjectPicker = function initProjectPicker(connectionSelectId, projectSelectId, projectContainerId,
+	incorrectTokenId, preselected, baseUrl) {
 	  const connection = $(connectionSelectId).val();
-	  const url = `${baseUrl}${connection}/workPackages/availableProjects`;
-	  try {
-	    const projects = await $.ajax({
-	      method: "GET",
-	      contentType: "application/json",
-	      url: url,
-	    });
+	  const project = $(projectSelectId);
 
-	    const projectSelect = $(projectSelectId);
-	    projectSelect.empty();
-
-	    if (projects.length === 1) {
-	      projectSelect.append(
-	        $("<option>", { value: projects[0].self.location, text: projects[0].name, selected: true })
-	      );
-	      projectSelect.prop("disabled", true).trigger("change");
-      } else {
-	      projectSelect.prop("disabled", false);
-	      projectSelect.append(
-	        $("<option>", { value: "", text: l10n.get("selectProjectPlaceholder"), disabled: true, selected: true })
-	      );
-	      projects.forEach((project) => {
-	        projectSelect.append(
-	          $("<option>", { value: project.self.location, text: project.name })
-	        );
-	      });
-	    }
-
-	    $(incorrectTokenId).addClass("hidden");
-	    $(projectContainerId).removeClass("hidden");
-	  } catch (err) {
-	    if (err.status === 409) {
-	      const link = $(`${incorrectTokenId} a`);
-	      const url = new URL(link.attr("href"), window.location.origin);
-	      url.searchParams.set("connectionName", connection);
-	      link.attr("href", url.toString());
-	      $(incorrectTokenId).removeClass("hidden");
-	      $(projectContainerId).addClass("hidden");
-	      return;
-	    }
-	    $(connectionSelectId).val("");
-	    notify(l10n.get("loadProjects.error"), "error");
+	  if (!connection) {
+	    return;
 	  }
+
+	  $(projectContainerId).removeClass("hidden");
+
+	  if (project[0] && project[0].selectize) {
+	    project[0].selectize.destroy();
+    } else if (project[0] && project[0].tomselect) {
+      project[0].tomselect.destroy();
+    }
+
+	  project.empty();
+    if (window.openProjectEvents) {
+	    window.openProjectEvents.dispatchEvent(
+	      new CustomEvent('projectsSelectDisplaying', { detail: { element: project } })
+	    );
+	  }
+
+	  let selectizeConfig = {
+	    create: false,
+	    maxItems: 1,
+	    inputClass: "selectize-input form-control",
+	    preload: true,
+	  };
+
+	  selectizeConfig.load = function (text, callback) {
+	    const connection = $(connectionSelectId).val();
+	    if (!connection) {
+	      return callback([]);
+	    }
+	    const searchUrl = `${baseUrl}${connection}/workPackages/availableProjects`;
+	    const selectize = project[0].selectize || project[0].tomselect;
+	    $.getJSON(searchUrl, { search: text, selectedItem: project.val().split('/').pop() })
+	      .done(function (results) {
+	        if (incorrectTokenId) {
+	          $(incorrectTokenId).addClass("hidden");
+	        }
+	        results.forEach(function (result) {
+            if (!selectize.options[result.value]) {
+              selectize.addOption(result);
+            } else if (selectize.options[result.value].label != result.label) {
+              selectize.updateOption(result.value, result);
+            }
+	        });
+	        selectize.refreshOptions(false);
+	        callback();
+	        // Auto-select and lock the project when the instance exposes a single one.
+	        if (!text && results.length === 1) {
+	          selectize.setValue(results[0].value, false);
+	          // selectize.disable();
+	        }
+	      })
+	      .fail(function (err) {
+	        if (err.status === 409 && incorrectTokenId) {
+	          const link = $(`${incorrectTokenId} a`);
+	          const url = new URL(link.attr("href"), window.location.origin);
+	          url.searchParams.set("connectionName", connection);
+	          link.attr("href", url.toString());
+	          $(incorrectTokenId).removeClass("hidden");
+	          $(projectContainerId).addClass("hidden");
+	        } else {
+	          notify(l10n.get("loadProjects.error"), "error");
+	        }
+	        callback([]);
+	      });
+	  }
+
+	  project.xwikiSelectize(selectizeConfig);
+
+	  applyPreselected(project[0].selectize || project[0].tomselect, preselected);
+
+	  if (window.openProjectEvents) {
+	    window.openProjectEvents.dispatchEvent(
+	      new CustomEvent('projectsSelectDisplayed', { detail: { element: project } })
+	    );
+	  }
+	}
+
+	let applyPreselected = function applyPreselected(selectize, preselected) {
+	  if (!preselected?.value) {
+	    return;
+	  }
+	  if (!selectize.options[preselected.value]) {
+	    selectize.addOption(preselected);
+	  }
+	  selectize.setValue(preselected.value, true);
+	}
+
+	let initDynamicSelectizeFields = function initDynamicSelectizeFields(container, connectionSelectId,
+	projectHref, baseUrl) {
+	  $(container).find("select[data-op-selectize]").each(function () {
+	    const select = $(this);
+	    const endpoint = select.attr("data-endpoint");
+	    const preselectValue = select.attr("data-preselect-value");
+	    const preselectLabel = select.attr("data-preselect-label");
+
+	    const preselected = preselectValue
+	      ? { value: preselectValue, label: preselectLabel || preselectValue }
+	      : null;
+
+	    if (select[0] && select[0].selectize) {
+	      select[0].selectize.destroy();
+	    } else if (select[0] && select[0].tomselect) {
+	      select[0].tomselect.destroy();
+	    }
+      if (window.openProjectEvents) {
+	      window.openProjectEvents.dispatchEvent(
+	        new CustomEvent('dynamicSelectizeFieldDisplaying', { detail: { element: select, name: select.attr("name") } })
+	      );
+	    }
+
+	    let selectizeConfig = {
+	      create: false,
+	      maxItems: 1,
+	      inputClass: "selectize-input form-control",
+	      preload: true,
+	    };
+
+	    selectizeConfig.load = function (text, callback) {
+	      const connection = $(connectionSelectId).val();
+	      if (!connection) {
+	        return callback([]);
+	      }
+	      const project = projectHref || "";
+	      // The endpoint is a full path under the instance (e.g. "workPackages/availableAssignees" or "suggest/parent"),
+	      // so field types living on different resources can all be driven the same way.
+	      const searchUrl = `${baseUrl}${connection}/${endpoint}`;
+	      const selectize = select[0].selectize || select[0].tomselect;
+	      $.getJSON(searchUrl, { project: project, search: text, selectedItem: select.val().split('/').pop() })
+	        .done(function (results) {
+	          results.forEach(function (result) {
+	            if (!selectize.options[result.value]) {
+	              selectize.addOption(result);
+	            } else if (selectize.options[result.value].label != result.label) {
+	              selectize.updateOption(result.value, result);
+	            }
+	          });
+	          selectize.refreshOptions(false);
+	          callback();
+	        })
+	        .fail(function (err) {
+	          callback([]);
+	        });
+	    }
+
+	    select.xwikiSelectize(selectizeConfig);
+
+	    applyPreselected(select[0].selectize || select[0].tomselect, preselected);
+
+	    // Let listeners (e.g. the dashboard autofill) react to a freshly built field, keyed by its name.
+	    if (window.openProjectEvents) {
+	      window.openProjectEvents.dispatchEvent(
+	        new CustomEvent('dynamicSelectizeFieldDisplayed', { detail: { element: select, name: select.attr("name") } })
+	      );
+	    }
+	  });
+	}
+
+	let destroySelectize = function destroySelectize(container) {
+	  $(container).find("select").each(function () {
+	    if (this.selectize) {
+	      this.selectize.destroy();
+	    } else if (this.tomselect) {
+	      this.tomselect.destroy();
+	    }
+	  });
 	}
 
 	let createWPUtils = {
 	  notify: notify,
 	  createInput: createInput,
 	  buildPayload: buildPayload,
-	  loadProjects: loadProjects,
+	  initProjectPicker: initProjectPicker,
+	  initDynamicSelectizeFields: initDynamicSelectizeFields,
+	  destroySelectize: destroySelectize,
 	  createWorkPackagesRequest: createWorkPackagesRequest
 	}
 

@@ -4,19 +4,22 @@
     "defaultValue" : null,
     "label": "Subject",
     "type": "text",
-    "required": true
+    "required": true,
+    "writable": false
   },
   "description": {
     "allowedValues": null,
     "defaultValue" : null,
     "label": "Description",
     "type": "text",
-    "required": false
+    "required": false,
+    "writable": false
   },
   "type": {
     "allowedValues": [
       {
         "color": "#1A67A3",
+        "isMilestone": false,
         "name": "Task",
         "self": {
           "location": "/api/v3/types/1",
@@ -26,6 +29,7 @@
       },
       {
         "color": "#35C53F",
+        "isMilestone": false,
         "name": "Milestone",
         "self": {
           "location": "/api/v3/types/2",
@@ -37,7 +41,8 @@
     "defaultValue" : null,
     "label": "Type",
     "type": "select",
-    "required": true
+    "required": true,
+    "writable": false
   },
   "priority": {
     "allowedValues": [
@@ -63,7 +68,8 @@
     "defaultValue" : null,
     "label": "Priority",
     "type": "select",
-    "required": true
+    "required": true,
+    "writable": false
   },
   "status": {
     "allowedValues": [
@@ -89,44 +95,41 @@
     "defaultValue" : null,
     "label": "Status",
     "type": "select",
-    "required": true
+    "required": true,
+    "writable": false
   },
   "assignee": {
-    "allowedValues": [
-      {
-        "name": "User 1",
-        "self": {
-          "location": "/api/v3/users/1",
-          "value": "User 1"
-        },
-        "id": 1
-      },
-      {
-        "name": "User 2",
-        "self": {
-          "location": "/api/v3/users/2",
-          "value": "User 2"
-        },
-        "id": 2
-      }
-    ],
-    "defaultValue" : null,
+    "endpoint": "workPackages/availableAssignees",
+    "defaultValue": "",
+    "defaultLabel": "",
     "label": "Assignee",
-    "type": "select",
-    "required": false
+    "type": "selectize",
+    "required": false,
+    "writable": false
+  },
+  "parent": {
+    "endpoint": "suggest/parent",
+    "defaultValue": "",
+    "defaultLabel": "",
+    "label": "",
+    "type": "selectize",
+    "required": false,
+    "writable": false
   },
   "startDate": {
     "allowedValues": null,
     "defaultValue" : null,
     "label": "Start date",
     "type": "date",
-    "required": false
+    "required": false,
+    "writable": false
   },
   "dueDate": {
     "allowedValues": null,
     "defaultValue" : null,
     "label": "Finish date",
     "type": "date",
-    "required": false
+    "required": false,
+    "writable": false
   }
 }

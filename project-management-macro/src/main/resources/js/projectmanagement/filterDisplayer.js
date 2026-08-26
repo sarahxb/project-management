@@ -23,8 +23,13 @@ define(['jquery', 'moment', 'moment-jdateformatparser', 'xwiki-selectize', 'date
     switch (type) {
       case "boolean":
       case "list":
-        if (inputElem[0] && inputElem[0].selectize) {
+        if (!inputElem[0]) {
+          return;
+        }
+        if (inputElem[0].selectize) {
           inputElem[0].selectize.destroy();
+        } else if (inputElem[0].tomselect) {
+          inputElem[0].tomselect.destroy();
         }
         break;
       case "date":
@@ -94,12 +99,18 @@ define(['jquery', 'moment', 'moment-jdateformatparser', 'xwiki-selectize', 'date
         let options = params.options || [];
         let selectizeCfg = {
           create: true,
-          options,
           maxItems: 1
         };
+        if (options.size() > 0) {
+          selectizeCfg.options = options;
+        }
         if (params.searchURL) {
           selectizeCfg.load = function (text, callback) {
-            const searchURL = params.searchURL.replace("{encodedQuery}", encodeURIComponent(text));
+            let searchURL = params.searchURL.replace("{encodedQuery}", encodeURIComponent(text));
+            if (inputElem.val() != '') {
+              let selectedItem = 'selectedItem=' + encodeURIComponent(inputElem.val());
+              searchURL += searchURL.indexOf('?') >= 0 ? '&' + selectedItem : '?' + selectedItem;
+            }
             $.getJSON(searchURL)
               .then(function (results) {
                 if (Array.isArray(results)) {

@@ -31,10 +31,177 @@
   <author>xwiki:XWiki.Admin</author>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
   <version>1.1</version>
-  <title>Template</title>
+  <title>Project Documentation Homepage</title>
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>Home Space</content>
+  <content>= 🚀 Project Documentation Homepage =
+
+{{info}}
+Welcome to the documentation space for this OpenProject-linked project.
+
+Use this page as the central hub for project status, key links, delivery progress, and live ticket insights.
+{{/info}}
+
+== 🎯 Project Summary ==
+
+This project aims to deliver a clear, well-documented solution with transparent planning, structured specifications, and traceable execution.
+
+* 🔗 **Linked OpenProject project:** //Linked project placeholder//
+* 🎯 **Parent work package:** //Linked parent work package placeholder//
+* 👤 **Project owner:** //Name placeholder//
+* 📅 **Current phase:** //Discovery / Implementation / Testing / Launch//
+
+== ✅ Open Tickets ==
+
+{{openproject filters="{~"query~":{~"filters~":[{~"property~":~"status~",~"constraints~":[{~"operator~":~"o~",~"value~":~"~"}]}]~}~}" limit="15"/}}
+
+== 👤 Assigned to Me ==
+
+{{openproject filters="{~"query~":{~"filters~":[{~"property~":~"assignees~",~"constraints~":[{~"operator~":~"=~",~"value~":~"me~"}]}]~}~}" limit="9" workItemsDisplayer="liveDataCards"/}}
+
+== 📊 Project Health Charts ==
+
+{{container layoutStyle="columns"}}
+(((
+{{openprojectchart datasetsLabels="[~"Open Work Packages~",~"Closed Work Packages~"]" filters="[{~"query~":{~"filters~":[{~"property~":~"status~",~"constraints~":[{~"operator~":~"o~",~"value~":~"~"}]}]~}~},{~"query~":{~"filters~":[{~"property~":~"status~",~"constraints~":[{~"operator~":~"c~",~"value~":~"~"}]}]~}~}]" limit="300" property="creationDate" type="line" typeParams="{~"period~":~"DAILY~",~"metric~":~"accumulate~"}"/}}
+)))
+
+(((
+{{openprojectchart limit="400" property="type" type="pie" typeParams="{~"period~":~"~",~"metric~":~"count~"}"/}}
+)))
+{{/container}}
+
+== 🔗 Useful Links ==
+
+|= Resource |= Description | 
+| OpenProject project | //Link to the connected OpenProject project// 
+| Parent epic | //Link to the selected parent work package //
+| Specifications | [[Project Specifications&gt;&gt;Project Specifications]]
+| Meeting notes | [[Meeting Notes&gt;&gt;doc:.Project Meeting Notes yyyy MM dd.WebHome]] 
+
+== 📈 Key Milestones ==
+
+* 🚩 //Milestone 1 — dummy description of a key delivery date//
+* 🚩 //Milestone 2 — dummy description of a key delivery date//
+* 🏁 //Final delivery — dummy description of target completion//
+
+//For the full calendar of dates synced from OpenProject, see the [[Project Specifications&gt;&gt;Project Specifications]] page.//
+
+== 👥 Team &amp; Contacts ==
+
+|=Role|=Name|=Contact
+|Project Lead|//John Doe//|//john.doe@example.com//
+|Product Owner|//John Doe//|//john.doe@example.com//
+|Tech Lead|//John Doe//|//john.doe@example.com//
+
+== 🧭 Next Steps ==
+
+* Review open tickets.
+* Update project specifications.
+* Add recent meeting notes.
+* Check charts for progress and risks.
+
+💡 //Tip: Use the "Project Specifications" page for detailed requirements, and "Project Meeting Notes yyyy MM dd" to track decisions and action items.//</content>
+  <object>
+    <name>OpenProject.Code.Template.WebHome</name>
+    <number>0</number>
+    <className>OpenProject.Code.SpacePageMarkerClass</className>
+    <guid>8a7105a7-f8ca-4469-bf0a-5129bb9324a0</guid>
+    <class>
+      <name>OpenProject.Code.SpacePageMarkerClass</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <marker>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>marker</name>
+        <number>1</number>
+        <picker>1</picker>
+        <prettyName>marker</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </marker>
+    </class>
+    <property>
+      <marker>root</marker>
+    </property>
+  </object>
+  <object>
+    <name>OpenProject.Code.Template.WebHome</name>
+    <number>0</number>
+    <className>ProjectManagement.Code.RelationClass</className>
+    <guid>003f09bc-2a1e-493a-9f3d-be71e32d6fdb</guid>
+    <class>
+      <name>ProjectManagement.Code.RelationClass</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <client>
+        <disabled>0</disabled>
+        <name>client</name>
+        <number>1</number>
+        <prettyName>Project Management Client ID</prettyName>
+        <size>20</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </client>
+      <clientParams>
+        <contenttype>PureText</contenttype>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <name>clientParams</name>
+        <number>4</number>
+        <prettyName>Client Parameters</prettyName>
+        <rows>20</rows>
+        <size>40</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </clientParams>
+      <project>
+        <disabled>0</disabled>
+        <name>project</name>
+        <number>2</number>
+        <prettyName>Project ID</prettyName>
+        <size>20</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </project>
+      <workItem>
+        <disabled>0</disabled>
+        <name>workItem</name>
+        <number>3</number>
+        <prettyName>Work item ID</prettyName>
+        <size>20</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </workItem>
+    </class>
+    <property>
+      <client>openproject</client>
+    </property>
+    <property>
+      <clientParams/>
+    </property>
+    <property>
+      <project/>
+    </property>
+    <property>
+      <workItem/>
+    </property>
+  </object>
 </xwikidoc>

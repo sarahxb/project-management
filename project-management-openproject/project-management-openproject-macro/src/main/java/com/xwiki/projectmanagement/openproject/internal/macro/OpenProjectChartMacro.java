@@ -28,12 +28,14 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 
 import org.xwiki.component.annotation.Component;
+import org.xwiki.observation.ObservationManager;
 import org.xwiki.rendering.block.Block;
 import org.xwiki.rendering.macro.MacroExecutionException;
 import org.xwiki.rendering.transformation.MacroTransformationContext;
 
 import com.xwiki.projectmanagement.internal.DefaultProjectManagementClientExecutionContext;
 import com.xwiki.projectmanagement.internal.macro.AbstractProjectManagementChartMacro;
+import com.xwiki.projectmanagement.openproject.event.BeforeOpenProjectMacroExecutionEvent;
 import com.xwiki.projectmanagement.openproject.internal.UserTokenChecker;
 import com.xwiki.projectmanagement.openproject.macro.OpenProjectChartMacroParameters;
 
@@ -51,12 +53,15 @@ public class OpenProjectChartMacro extends AbstractProjectManagementChartMacro<O
     @Inject
     private UserTokenChecker userTokenChecker;
 
+    @Inject
+    private ObservationManager observationManager;
+
     /**
      * Default constructor.
      */
     public OpenProjectChartMacro()
     {
-        super("Open Project Chart Macro", "desc", OpenProjectChartMacroParameters.class);
+        super("OpenProject Chart Macro", "desc", OpenProjectChartMacroParameters.class);
     }
 
     @Override
@@ -69,15 +74,23 @@ public class OpenProjectChartMacro extends AbstractProjectManagementChartMacro<O
     public List<Block> execute(OpenProjectChartMacroParameters parameters, String content,
         MacroTransformationContext context) throws MacroExecutionException
     {
-        List<Block> warningBlock = userTokenChecker.getWarningBlock(parameters.getInstance());
+        observationManager.notify(new BeforeOpenProjectMacroExecutionEvent(), this, parameters);
+        String instanceToUse = parameters.getInstance();
+
+        List<Block> warningBlock = userTokenChecker.getWarningBlock(instanceToUse, context);
         if (!warningBlock.isEmpty()) {
             return warningBlock;
         }
         parameters.setClient("openproject");
+        return super.execute(parameters, content, context);
+    }
+
+    @Override
+    protected void prepareContext(OpenProjectChartMacroParameters parameters)
+    {
         if (macroContext instanceof DefaultProjectManagementClientExecutionContext) {
             Map<String, Object> clientContext = Map.of("instance", parameters.getInstance());
             ((DefaultProjectManagementClientExecutionContext) macroContext).setContext(clientContext);
         }
-        return super.execute(parameters, content, context);
     }
 }

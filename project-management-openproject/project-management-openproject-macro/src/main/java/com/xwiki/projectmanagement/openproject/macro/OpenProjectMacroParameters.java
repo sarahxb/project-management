@@ -26,20 +26,21 @@ import org.xwiki.properties.annotation.PropertyMandatory;
 import com.xwiki.projectmanagement.macro.ProjectManagementMacroParameters;
 import com.xwiki.projectmanagement.openproject.OpenProjectFilter;
 import com.xwiki.projectmanagement.openproject.OpenProjectInstance;
+import com.xwiki.projectmanagement.openproject.OpenProjectInstanceHolder;
 import com.xwiki.projectmanagement.openproject.OpenProjectProperties;
 import com.xwiki.projectmanagement.openproject.OpenProjectSort;
 
 /**
- * Open project macro params.
+ * OpenProject macro params.
  *
  * @version $Id$.
  */
-public class OpenProjectMacroParameters extends ProjectManagementMacroParameters
+public class OpenProjectMacroParameters extends ProjectManagementMacroParameters implements OpenProjectInstanceHolder
 {
     private String instance;
 
     /**
-     * Default constructor. Sets some default values specific to the Open Project implementation.
+     * Default constructor. Sets some default values specific to the OpenProject implementation.
      */
     public OpenProjectMacroParameters()
     {

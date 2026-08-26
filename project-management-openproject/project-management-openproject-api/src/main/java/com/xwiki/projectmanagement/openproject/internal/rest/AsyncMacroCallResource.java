@@ -53,10 +53,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xpn.xwiki.internal.context.XWikiContextContextStore;
 import com.xwiki.projectmanagement.internal.macro.ProjectManagementAsyncRenderer;
+import com.xwiki.projectmanagement.macro.ProjectManagementAsyncMacroParams;
 import com.xwiki.projectmanagement.macro.ProjectManagementMacroParameters;
 
 /**
- * Endpoint for generating the async placeholder for an open project macro call.
+ * Endpoint for generating the async placeholder for an OpenProject macro call.
  *
  * @version $Id$
  */
@@ -77,10 +78,10 @@ public class AsyncMacroCallResource extends XWikiResource
     private final ObjectMapper jsonMapper = new ObjectMapper();
 
     /**
-     * @param wiki the wiki that contains the Open Project instance.
+     * @param wiki the wiki that contains the OpenProject instance.
      * @param displayer the displayer that should be used for the macro call. The value must be one of the
      *     {@link com.xwiki.projectmanagement.internal.WorkItemsDisplayer}.
-     * @param instance the name of the Open Project connection configuration.
+     * @param instance the name of the OpenProject connection configuration.
      * @param workPackageId the id of the work package that should be displayed.
      * @return the async placeholder that will be replaced with the rendered macro; 401 if the user does not have the
      *     rights to view the response;
@@ -133,7 +134,7 @@ public class AsyncMacroCallResource extends XWikiResource
         if (displayer == null || displayer.isEmpty()) {
             throw new ComponentLookupException("The displayer hint is not present.");
         }
-        Macro<ProjectManagementMacroParameters> displayerMacro = componentManager.getInstance(Macro.class, displayer);
+        Macro<ProjectManagementAsyncMacroParams> displayerMacro = componentManager.getInstance(Macro.class, displayer);
         ProjectManagementMacroParameters parameters = new ProjectManagementMacroParameters();
         // TODO: Would be nicer if we retrieved the translation prefix from the json configuration.
         parameters.setSourceParameters(String.format("instance=%s&client=%s&translationPrefix=%s", instance,

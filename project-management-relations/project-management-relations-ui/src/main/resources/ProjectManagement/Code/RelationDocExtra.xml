@@ -77,7 +77,6 @@
         <name>code</name>
         <number>2</number>
         <prettyName>Code</prettyName>
-        <restricted>0</restricted>
         <rows>20</rows>
         <size>50</size>
         <unmodifiable>0</unmodifiable>
@@ -125,7 +124,7 @@
       <cache>long</cache>
     </property>
     <property>
-      <code>require(['jquery'], function ($) {
+      <code>require(['jquery', 'xwiki-selectize'], function ($) {
   console.debug('yellow');
   setTimeout(function () {
     $('.proj-manag-relation').each(function () {
@@ -134,23 +133,24 @@
       if (!client) {
         return;
       }
-      debugger;
 
       root.find('.proj-manag-relation-property dd').each(function () {
         let valueContainer = $(this);
 
         // Callback function to execute when mutations are observed
-        const callback = (mutationList, observer) => {
-          debugger;
+        const callback = (mutationList, observer) =&gt; {
           observer.disconnect();
           let clientParams = root.data('params') &amp;&amp; root.data('params');
           let workItemREST = XWiki.contextPath + "/rest/wikis/" + XWiki.currentWiki + "/projectmanagement/" + client + "/workitems";
           let projectsREST = XWiki.contextPath + "/rest/wikis/" + XWiki.currentWiki + "/projectmanagement/" + client + "/projects";
-          valueContainer.toggleClass('loading');
+          if (valueContainer.find(':input').length &gt; 0) {
+            return;
+          }
+          valueContainer.addClass('loading');
           // If view mode load information for the ids.
           let entityId = valueContainer.text().trim();
           if (!entityId) {
-            valueContainer.toggleClass('loading');
+            valueContainer.removeClass('loading');
             observer.observe(valueContainer[0], { childList: true });
             return;
           }
@@ -170,14 +170,13 @@
                 anchor = response.summary.value;
                 href = response.summary.location;
               }
-              valueContainer.html($('&lt;a/>').attr('href', href).text(anchor));
-              console.log(response);
+              valueContainer.html($('&lt;a/&gt;').attr('href', href).text(anchor));
             })
             .fail(function (_jqxhr, textStatus, error) {
               new XWiki.widgets.Notification('Failed to load the entity information.', 'error');
             })
             .always(function () {
-              valueContainer.toggleClass('loading');
+              valueContainer.removeClass('loading');
               observer.observe(valueContainer[0], { childList: true });
             });
 
@@ -191,12 +190,9 @@
         // Start observing the target node for configured mutations
         // observer.observe(valueContainer[0], { childList: true });
       });
-      root.find('.proj-manag-relation-property').each(function () {
-        let propRoot = $(this);
-        propRoot.on('focus', ':input', function () {
-          debugger;
+      let initInput = function (propRoot, root) {
           let input = propRoot.find(':input');
-          if (input &lt;= 0 || input[0].selectize) {
+          if (input &lt;= 0 || input[0].selectize || input[0].tomselect) {
             return;
           }
           let clientParams = root.data('params') &amp;&amp; root.data('params');
@@ -225,29 +221,36 @@
               ]
             }
           };
-          if (dataType == 'project') {
-            cfg.query.filters = [];
-          }
+          let firstLoad = true;
           selectizeCfg.load = function (text, callback) {
             let urlParams = { ...clientParams };
-            debugger;
             if (cfg.query.filters.length &lt;= 0) {
-              if (input[0].selectize &amp;&amp; Object.keys(input[0].selectize.options).length > 1) {
+              let selectize = input[0].selectize || input[0].tomselect;
+              if (selectize &amp;&amp; Object.keys(selectize.options).length &gt; 1) {
                 callback([]);
                 return;
               }
             } else {
               cfg.query.filters[0].constraints[0].value = text;
             }
+            cfg.query.filters[0].constraints[0].operator = 'contains';
+            cfg.query.filters[0].property = 'summary';
+            if (dataType == 'project') {
+              cfg.query.filters[0].property = 'name';
+            }
+            if (firstLoad) {
+              cfg.query.filters[0].property = 'id';
+              cfg.query.filters[0].constraints[0].operator = 'equals';
+              firstLoad = false;
+            }
             urlParams.filter = JSON.stringify(cfg);
             $.getJSON(url, urlParams)
               .then(function (results) {
-                console.log(results);
                 let items = (results &amp;&amp; results.items) || [];
                 if (dataType == 'project') {
-                  items = items.map(item => { return { label: item.identifier.value, value: item.identifier.value, hint: item.name }});
+                  items = items.map(item =&gt; { return { label: item.name, value: item.identifier.value, hint: item.identifier.value }});
                 } else {
-                  items = items.map(item => { return { label: item.identifier.value, value: item.identifier.value, hint: item.summary.value }});
+                  items = items.map(item =&gt; { return { label: item.summary.value, value: item.identifier.value, hint: item.project.value }});
                 }
                 callback(items);
               })
@@ -257,7 +260,15 @@
               });
           };
           input.xwikiSelectize(selectizeCfg);
-        })
+      };
+      root.find('.proj-manag-relation-property').each(function () {
+        let propRoot = $(this);
+        if (XWiki.contextaction == 'edit') {
+          initInput(propRoot, root);
+        }
+        propRoot.on('focus', ':input', function () {
+          initInput(propRoot, root);
+        });
       });
     });
   });
@@ -333,7 +344,6 @@
         <name>content</name>
         <number>1</number>
         <prettyName>Executed Content</prettyName>
-        <restricted>0</restricted>
         <rows>25</rows>
         <size>120</size>
         <unmodifiable>0</unmodifiable>
@@ -364,7 +374,6 @@
         <name>parameters</name>
         <number>7</number>
         <prettyName>Extension Parameters</prettyName>
-        <restricted>0</restricted>
         <rows>10</rows>
         <size>40</size>
         <unmodifiable>0</unmodifiable>
@@ -401,12 +410,15 @@
     <property>
       <content>{{velocity output=false}}
 #template('display_macros.vm')
-#macro (getTranslation $client $value)
+#macro (getTranslation $client $value $params)
   #set ($key = "projectmanagement.relations.$!{client}.${value}")
-  #set ($translation = "$!services.localization.render($key)")
+  #if (!$params)
+    #set ($params = [])
+  #end
+  #set ($translation = "$!services.localization.render($key, $params)")
   #if ($translation == $key)
     #set ($key = "projectmanagement.relations.${value}")
-    #set ($translation = $services.localization.render($key))
+    #set ($translation = $services.localization.render($key, $params))
   #end
   #if ($translation == $key)
     #set ($translation = $value)
@@ -419,7 +431,7 @@
 {{velocity}}
 ## Display the sections.
 {{html clean=false}}
-#set ($objects = $doc.getObjects('ProjectManagement.Code.RelationClass'))
+#set ($objects = $services.projectmanagement.relations.getRelations($doc.documentReference, true))
 #set ($discard = $xwiki.jsx.use('ProjectManagement.Code.RelationDocExtra'))
 #set ($discard = $xwiki.jsfx.use('uicomponents/edit/editableProperty.js', {
   'forceSkinAction': true,
@@ -427,26 +439,35 @@
 }))
 &lt;div class="proj-manag-relations"&gt;
   #foreach($relationObj in $objects)
-    #set ($discard = $doc.use($relationObj))
-    #set ($client = ${relationObj.getValue('client')})
-    &lt;div class="proj-manag-relation xform" data-client="$client" data-params="$escapetool.xml(${relationObj.getValue('clientParams')})"&gt;
+    #set ($isOwner = $doc.documentReference.equals($relationObj.documentReference))
+    #set ($relationOwnerDoc = $doc)
+    #set ($client = ${relationObj.getClient()})
+    #if (!$isOwner)
+      #set($relationOwnerDoc = $xwiki.getDocument($relationObj.documentReference))
+      #set ($message = "#getTranslation($client, 'notowner', ['%1%', '%2%', '%3%'])")
+      #set ($message = $message.replace('%1%', "&lt;a href='$escapetool.xml($relationOwnerDoc.getURL('view', 'viewer=projectmanagementrelations'))'&gt;$services.model.serialize($relationOwnerDoc.documentReference)&lt;/a&gt;"))
+      #set ($message = $message.replace('%2%', "&lt;a href='$doc.getURL('view', 'viewer=projectmanagementrelations')'&gt;").replace('%3%', "&lt;/a&gt;"))
+      &lt;div class="box infomessage"&gt;$message&lt;/div&gt;
+    #end
+    #set ($discard = $relationOwnerDoc.use($relationObj.getXobject()))
+    &lt;div class="proj-manag-relation xform" data-client="$client" data-params="$escapetool.xml(${relationObj.getClientParams()})"&gt;
       &lt;h2&gt;#getTranslation('clients', $client)&lt;/h2&gt;
       &lt;div id="proj-manag-relation-left" class="col-xs-12 col-sm-6"&gt;
         &lt;dl&gt;
           &lt;div class="proj-manag-relation-project proj-manag-relation-property"&gt;
-            &lt;dt#if ($hasEdit) class="editableProperty"#end data-property="ProjectManagement.Code.RelationClass[${relationObj.number}].project" data-property-type="object"&gt;
+            &lt;dt#if ($hasEdit &amp;&amp; $isOwner) class="editableProperty"#end data-property="ProjectManagement.Code.RelationClass[${relationObj.getXobject().number}].project" data-property-type="object"&gt;
               &lt;label&gt;#getTranslation($client, 'project.name')&lt;/label&gt;
             &lt;/dt&gt;
             &lt;dd data-prop="project"&gt;
-              $doc.display('project')
+              $relationOwnerDoc.display('project')
             &lt;/dd&gt;
           &lt;/div&gt;
           &lt;div class= "proj-manag-relation-workitem proj-manag-relation-property"&gt;
-            &lt;dt#if ($hasEdit) class="editableProperty"#end data-property="ProjectManagement.Code.RelationClass[${relationObj.number}].workItem" data-property-type="object"&gt;
+            &lt;dt#if ($hasEdit &amp;&amp; $isOwner) class="editableProperty"#end data-property="ProjectManagement.Code.RelationClass[${relationObj.getXobject().number}].workItem" data-property-type="object"&gt;
               &lt;label&gt;#getTranslation($client, 'workItem.name')&lt;/label&gt;
             &lt;/dt&gt;
             &lt;dd data-prop="workItem"&gt;
-              $doc.display('workItem')
+              $relationOwnerDoc.display('workItem')
             &lt;/dd&gt;
           &lt;/div&gt;
           #if ($client)
@@ -484,9 +505,9 @@
       <name>com.xwiki.projectmanagement.relations.docextra</name>
     </property>
     <property>
-      <parameters>show=#set($show = false)#if($doc.getObjects('ProjectManagement.Code.RelationClass').size() > 0)#set($show = true)#end${show}
+      <parameters>show=#if($xcontext.get('proj-manag-relations').size() &gt; 0)true#else false#end
 title=$services.localization.render('projectmanagement.relations.docextra.title')
-itemnumber=$doc.getObjects('ProjectManagement.Code.RelationClass').size()</parameters>
+itemnumber=#set($discard = $xcontext.put('proj-manag-relations', $services.projectmanagement.relations.getRelations($doc.documentReference, true)))$xcontext.get('proj-manag-relations').size()</parameters>
     </property>
     <property>
       <scope>wiki</scope>

@@ -19,7 +19,6 @@
  */
 package com.xwiki.projectmanagement.test.openproject;
 
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.xwiki.ckeditor.test.po.CKEditor;
@@ -43,16 +42,12 @@ public abstract class AbstractOpenProjectMacroEditModal extends MacroDialogEditM
 
     private WYSIWYGEditPage editPage;
 
-    /**
-     * Model an edit modal that is already opened.
-     */
     protected AbstractOpenProjectMacroEditModal()
     {
     }
 
     /**
-     * Edit the given page with the WYSIWYG editor, insert the given macro and wait for its edit modal to be
-     * displayed.
+     * Edit the given page with the WYSIWYG editor, insert the given macro and wait for its edit modal to be displayed.
      *
      * @param setup the test setup.
      * @param docRef the page in which the macro will be inserted.
@@ -76,8 +71,8 @@ public abstract class AbstractOpenProjectMacroEditModal extends MacroDialogEditM
     }
 
     /**
-     * @return the WYSIWYG edit page that contains this modal, or {@code null} if the modal was not opened by this
-     *     page object.
+     * @return the WYSIWYG edit page that contains this modal, or {@code null} if the modal was not opened by this page
+     *     object.
      */
     public WYSIWYGEditPage getEditPage()
     {
@@ -114,16 +109,11 @@ public abstract class AbstractOpenProjectMacroEditModal extends MacroDialogEditM
      */
     public WebElement getMacroParameterInput(String name)
     {
-        return getDriver().findElementWithoutWaitingWithoutScrolling(
-            // We match *-editor-modal so the page object can be used both in Dashboard and CKEditor tests.
-            By.cssSelector(
-                String.format("[class*=-editor-modal] .macro-parameter-field input[name='%s'],select[name='%s']",
-                    name, name)));
+        return getDriver().findElementWithoutWaitingWithoutScrolling(By.cssSelector(
+            String.format("[class*=-editor-modal] .macro-parameter-field input[name='%s'],select[name='%s']", name,
+                name)));
     }
 
-    /**
-     * Click the "More" section of the modal that reveals all the other parameters.
-     */
     public void clickMore()
     {
         getDriver().findElement(By.cssSelector("li.more")).click();

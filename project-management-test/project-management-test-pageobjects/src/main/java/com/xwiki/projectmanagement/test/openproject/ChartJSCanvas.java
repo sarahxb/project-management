@@ -25,6 +25,7 @@ import org.xwiki.test.ui.po.BaseElement;
 
 /**
  * Models the canvas element that the Chart Macro renders.
+ *
  * @version $Id$
  * @since 1.3.0-rc-2
  */
@@ -34,29 +35,12 @@ public class ChartJSCanvas extends BaseElement
 
     private final WebElement canvas;
 
-    /**
-     * Wait until the first chart of the page is displayed and model it.
-     */
     public ChartJSCanvas()
     {
         getDriver().waitUntilElementIsVisible(CANVAS);
         this.canvas = getDriver().findElement(CANVAS);
     }
 
-    /**
-     * Wait until the first chart contained by the given element is displayed and model it.
-     *
-     * @param container the element that contains the chart.
-     */
-    public ChartJSCanvas(WebElement container)
-    {
-        getDriver().waitUntilElementIsVisible(container, CANVAS);
-        this.canvas = container.findElement(CANVAS);
-    }
-
-    /**
-     * @return the type of the displayed chart, i.e. bar, pie, line or doughnut.
-     */
     public String getChartType()
     {
         return this.canvas.getDomAttribute("data-type");

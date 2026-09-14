@@ -39,9 +39,6 @@ public class OpenProjectChartMacroEditModal extends AbstractOpenProjectMacroEdit
 
     private static final String PROPERTY_PARAMETER = "property";
 
-    /**
-     * Model an edit modal that is already opened.
-     */
     public OpenProjectChartMacroEditModal()
     {
     }
@@ -57,20 +54,11 @@ public class OpenProjectChartMacroEditModal extends AbstractOpenProjectMacroEdit
         super(setup, docRef, MACRO_NAME, EXPECTED_MACRO_COUNT);
     }
 
-    /**
-     * @return the currently selected chart type.
-     */
     public String getChartType()
     {
         return getTypeSelect().getFirstSelectedOption().getDomAttribute("value");
     }
 
-    /**
-     * Select the type of the chart that will be displayed.
-     *
-     * @param type the value of the chart type, i.e. bar, pie, line or doughnut.
-     * @return this object.
-     */
     public OpenProjectChartMacroEditModal setChartType(String type)
     {
         getTypeSelect().selectByValue(type);
@@ -78,7 +66,7 @@ public class OpenProjectChartMacroEditModal extends AbstractOpenProjectMacroEdit
     }
 
     /**
-     * Select the work item property whose values will be grouped by the chart.
+     * Select the property whose values will be grouped by the chart.
      *
      * @param property the technical name of the property.
      * @return this object.

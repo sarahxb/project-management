@@ -49,7 +49,6 @@ public class OpenProjectMacroEditModal extends AbstractOpenProjectMacroEditModal
      *
      * @param setup the test setup.
      * @param docRef the page in which the macro will be inserted.
-     * @since 1.3.0
      */
     public OpenProjectMacroEditModal(TestUtils setup, DocumentReference docRef)
     {

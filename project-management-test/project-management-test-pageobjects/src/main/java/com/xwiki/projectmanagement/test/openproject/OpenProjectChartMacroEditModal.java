@@ -79,6 +79,8 @@ public class OpenProjectChartMacroEditModal extends AbstractOpenProjectMacroEdit
 
     private Select getTypeSelect()
     {
+        // We don't use org.xwiki.test.ui.po.Select since it presses Escape after selecting an option, which closes
+        // the macro edit modal.
         return new Select(getMacroParameterInput(TYPE_PARAMETER));
     }
 }

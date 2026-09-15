@@ -85,6 +85,10 @@ public class OpenProjectIT
 
     private final LocalDocumentReference page3 = new LocalDocumentReference("Main", "ChartsTest");
 
+    private final LocalDocumentReference page4 = new LocalDocumentReference("Main", "ChartsFilterTest");
+
+    private final LocalDocumentReference page5 = new LocalDocumentReference("Main", "ChartsTypeTest");
+
     private final OpenProjectInstance openProjectInstance = new OpenProjectInstance();
     // If you use an external instance, make sure to have it started with the same commands that
     // {@link OpenProjectInstance} starts the instance. Namely, watch for doorkeeper.rb file.
@@ -103,6 +107,8 @@ public class OpenProjectIT
         setup.deletePage(new DocumentReference(page1, wiki));
         setup.deletePage(new DocumentReference(page2, wiki));
         setup.deletePage(new DocumentReference(page3, wiki));
+        setup.deletePage(new DocumentReference(page4, wiki));
+        setup.deletePage(new DocumentReference(page5, wiki));
 
         // OpenProject/Code/OpenProjectConfigurations/
         DocumentReference configsHome =
@@ -414,7 +420,7 @@ public class OpenProjectIT
     void chartsMacroParameterTest(TestUtils setup)
     {
         setup.setCurrentWiki(wiki.getName());
-        DocumentReference docRef = new DocumentReference(page3, wiki);
+        DocumentReference docRef = new DocumentReference(page5, wiki);
 
         // Checks all the chart type parameter values.
         OpenProjectChartMacroEditModal modal = new OpenProjectChartMacroEditModal(setup, docRef);
@@ -438,12 +444,12 @@ public class OpenProjectIT
 
     @Test
     @Order(110)
-    void chartsMacroFilterTest(TestUtils setup)
+    void chartsMacroGroupingPropertyTest(TestUtils setup)
     {
         setup.setCurrentWiki(wiki.getName());
         DocumentReference docRef = new DocumentReference(page3, wiki);
 
-        // Checks that the chart macro filter parameter works.
+        // Checks that the chart macro groups the results on the given property.
         OpenProjectChartMacroEditModal modal = new OpenProjectChartMacroEditModal(setup, docRef);
         modal.selectInstance(CONNECTION_ID);
         modal.clickMore();
@@ -464,6 +470,29 @@ public class OpenProjectIT
         assertFalse(chart.hasLabel("In progress"));
         assertFalse(chart.hasLabel("New"));
         assertTrue(chart.hasLabel("Normal"));
+    }
+
+    @Test
+    @Order(120)
+    void chartsMacroFilterTest(TestUtils setup)
+    {
+        setup.setCurrentWiki(wiki.getName());
+        DocumentReference docRef = new DocumentReference(page4, wiki);
+
+        // Checks that the chart macro only displays the work items matching the filter.
+        OpenProjectChartMacroEditModal modal = new OpenProjectChartMacroEditModal(setup, docRef);
+        modal.selectInstance(CONNECTION_ID);
+        modal.clickMore();
+        new FilterBuilderParameter().addFilter("status").setSuggestValue(1, "New");
+        modal.clickSubmit();
+        modal.getEditPage().clickSaveAndView();
+
+        new ViewPageWithOpenProjectMacro().waitUntilPageIsReady();
+
+        ChartJSCanvas chart = new ChartJSCanvas();
+        assertTrue(chart.hasLabel("New"));
+        assertFalse(chart.hasLabel("In progress"));
+        assertFalse(chart.hasLabel("Closed"));
     }
 
     @Test
